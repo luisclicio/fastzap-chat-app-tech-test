@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import datetime
 from pathlib import Path
 
+from django.utils.log import DEFAULT_LOGGING
 from environs import Env
 
 env = Env(expand_vars=True)
@@ -38,6 +39,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [
     "daphne",
+    "corsheaders",
     # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
@@ -46,7 +48,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-party apps
-    "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -150,6 +152,11 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
 
 # Simple JWT
@@ -160,7 +167,6 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
 }
-
 
 # DRF Spectacular
 SPECTACULAR_SETTINGS = {
@@ -177,5 +183,57 @@ SPECTACULAR_SETTINGS = {
 # Celery
 # https://docs.celeryproject.org/en/stable/userguide/configuration.html
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-
 CELERY_RESULT_BACKEND = "django-db"
+CELERY_TASK_ANNOTATIONS = {
+    "*": {
+        "max_retries": 6,
+        "retry_backoff": True,
+        "autoretry_for": (Exception,),
+    }
+}
+
+# Channels
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                (
+                    env.str("REDIS_HOST", default="localhost"),
+                    env.int("REDIS_PORT", default=6379),
+                ),
+            ]
+        },
+    },
+}
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "{asctime} [{levelname}] ({name}) {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
+        },
+        "django.server": DEFAULT_LOGGING["formatters"]["django.server"],
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+        "django.server": DEFAULT_LOGGING["handlers"]["django.server"],
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": env.str("LOG_LEVEL", default="INFO"),
+        },
+        "django.server": DEFAULT_LOGGING["loggers"]["django.server"],
+    },
+}
+
+# OpenRouter API
+OPENROUTER_API_KEY = env.str("OPENROUTER_API_KEY", default="")
