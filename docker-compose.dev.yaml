@@ -1,36 +1,47 @@
 volumes:
-  database_data:
-  redis_data:
+  database_data_dev:
+  redis_data_dev:
 
 services:
-  front:
+  front-dev:
     build:
       context: ./front
+      target: development
     ports:
       - '3000:3000'
+    volumes:
+      - ./front:/app
+      - /app/node_modules
 
-  api:
+  api-dev:
     build:
       context: .
+      target: development
     ports:
       - '8000:8000'
     env_file:
       - .env
+    volumes:
+      - .:/app
+      - /app/.venv
     depends_on:
-      - database
-      - redis
+      - database-dev
+      - redis-dev
 
-  celery:
+  celery-dev:
     build:
       context: .
       target: celery
     env_file:
       - .env
+    volumes:
+      - .:/app
+      - /app/.venv
     depends_on:
-      - database
-      - redis
+      - database-dev
+      - redis-dev
 
-  database:
+  database-dev:
     image: postgres:17-alpine
     env_file:
       - .env
@@ -41,11 +52,11 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - database_data:/var/lib/postgresql/data
+      - database_data_dev:/var/lib/postgresql/data
 
-  redis:
+  redis-dev:
     image: redis:7.4-alpine
     ports:
       - '6379:6379'
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
