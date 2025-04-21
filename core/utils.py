@@ -1,15 +1,11 @@
 from django.conf import settings
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIModel
-from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.models.gemini import GeminiModel
+from pydantic_ai.providers.google_gla import GoogleGLAProvider
 
-model = OpenAIModel(
-    "google/gemini-2.0-flash-exp:free",
-    provider=OpenAIProvider(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=settings.OPENROUTER_API_KEY,
-    ),
+model = GeminiModel(
+    settings.AI_MODEL, provider=GoogleGLAProvider(api_key=settings.AI_API_KEY)
 )
 
 

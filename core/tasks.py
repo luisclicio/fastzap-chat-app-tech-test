@@ -16,6 +16,7 @@ def moderate_message(message_id):
     """
     from core.models import Message
 
+    logger.info(f"Moderating message {message_id}.")
     message = Message.objects.get(id=message_id)
     has_safe_content = is_safe_content(message.content)
 

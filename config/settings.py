@@ -245,5 +245,6 @@ LOGGING = {
     },
 }
 
-# OpenRouter API
-OPENROUTER_API_KEY = env.str("OPENROUTER_API_KEY", default="")
+# AI
+AI_API_KEY = env.str("AI_API_KEY", default="")
+AI_MODEL = env.str("AI_MODEL", default="gemini-2.0-flash-lite")
